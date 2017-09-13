@@ -10,7 +10,7 @@ namespace TestAD
     {
         static void Main(string[] args)
         {
-            var data = ADHelper.GetUserData2("kapsch", "goweznia");
+            var data = ADHelper.GetUserData("kapsch", "goweznia");
 
             Console.WriteLine(data.FirstName);
             Console.WriteLine(data.LastName);

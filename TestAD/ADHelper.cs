@@ -1,4 +1,5 @@
-﻿using System.DirectoryServices;
+﻿using System;
+using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.Linq;
 
@@ -28,7 +29,7 @@ namespace TestAD
             }
         }
 
-        public static UserInfo GetUserData(string domain, string username)
+        public static UserInfo GetUserDataOld(string domain, string username)
         {
             using (var oDe = new DirectoryEntry("LDAP://" + domain, username, "", AuthenticationTypes.Secure))
             {
@@ -44,20 +45,26 @@ namespace TestAD
 
         // https://www.codeproject.com/Articles/6778/How-to-get-User-Data-from-the-Active-Directory
         // https://www.manageengine.com/products/ad-manager/help/csv-import-management/active-directory-ldap-attributes.html
-        public static UserInfo GetUserData2(string domain, string username)
+        // https://stackoverflow.com/questions/161398/finding-a-user-in-active-directory-with-the-login-name
+        public static UserInfo GetUserData(string domain, string username)
         {
             using (var dir = new DirectoryEntry($"LDAP://{domain}"))
             {
-                var search = new DirectorySearcher(dir);
-                search.Filter = $"(&(objectClass=user)(sAMAccountName={username}))";
-                var searchResult = search.FindOne();
-
-                return new UserInfo
+                using (var search = new DirectorySearcher(dir))
                 {
-                    FirstName = searchResult.Properties["givenName"][0].ToString(),
-                    LastName = searchResult.Properties["sn"][0].ToString(),
-                    Email = searchResult.Properties["mail"][0].ToString(),
-                };
+                    search.Filter = $"(&(objectClass=user)(sAMAccountName={username}))";
+                    var searchResult = search.FindOne();
+                    if (searchResult == null)
+                        throw new Exception("User does not exist");
+
+                    var props = searchResult.Properties;
+                    return new UserInfo
+                    {
+                        FirstName = props["givenName"][0].ToString(),
+                        LastName = props["sn"][0].ToString(),
+                        Email = props["mail"][0].ToString(),
+                    };
+                }
             }
         }
     }
